@@ -1,24 +1,29 @@
 import asyncio
 import logging
 import sys
+from utils import CurrencyInfo
 from os import getenv
-from typing import Any, Dict
-
+from aiogram3_calendar import simple_cal_callback, SimpleCalendar, dialog_cal_callback, DialogCalendar
 from aiogram import Bot, Dispatcher, F, Router, html
 from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import (
     KeyboardButton,
     Message,
     ReplyKeyboardMarkup,
     ReplyKeyboardRemove,
+    CallbackQuery,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton
 )
 
 TOKEN = getenv("BOT_TOKEN")
 
 form_router = Router()
+dp = Dispatcher()
 
 
 class BookingForm(StatesGroup):
@@ -36,7 +41,27 @@ class BookingForm(StatesGroup):
 @form_router.message(CommandStart())
 async def start_booking(message: Message, state: FSMContext) -> None:
     await state.set_state(BookingForm.preferred_currency.state)
-    await message.answer("Добро пожаловать! Пожалуйста, введите предпочитаемую валюту для бронирования.")
+    currencies = CurrencyInfo.get_currencies()
+
+    buttons = [
+        [
+            InlineKeyboardButton(text=f"{flag} {symbol}", callback_data=currency_code)
+            for currency_code, (symbol, flag) in chunk
+        ]
+        for chunk in CurrencyInfo.chunks(list(currencies.items()), 8)
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+    await message.answer("Добро пожаловать! Пожалуйста, введите предпочитаемую валюту для бронирования.",
+                         reply_markup=keyboard)
+
+
+@dp.callback_query(simple_cal_callback.filter())
+async def process_simple_calendar(callback_query: CallbackQuery, callback_data: dict):
+    selected, date = await SimpleCalendar().process_selection(callback_query, callback_data)
+    if selected:
+        await callback_query.message.answer(
+            f'You selected {date.strftime("%d/%m/%Y")}',
+        )
 
 
 @form_router.message(BookingForm.preferred_currency)
@@ -58,6 +83,7 @@ async def process_arrival_city(message: Message, state: FSMContext) -> None:
     await state.update_data(arrival_city=message.text)
     await state.set_state(BookingForm.travel_dates.state)
     await message.answer("Идеально! Теперь укажите даты вашей поездки и количество человек.")
+
 
 @form_router.message(BookingForm.travel_dates)
 async def process_travel_dates(message: Message, state: FSMContext) -> None:
@@ -96,12 +122,11 @@ async def process_payment(message: Message, state: FSMContext) -> None:
 
 async def main():
     bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
-    dp = Dispatcher()
     dp.include_router(form_router)
 
     await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
     asyncio.run(main())
