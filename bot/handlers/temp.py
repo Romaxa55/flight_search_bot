@@ -1,58 +1,10 @@
-import asyncio
-import logging
-import sys
-from utils import CurrencyInfo
-from os import getenv
-from aiogram3_calendar import simple_cal_callback, SimpleCalendar, dialog_cal_callback, DialogCalendar
-from aiogram import Bot, Dispatcher, F, Router, html
-from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import (
-    KeyboardButton,
     Message,
-    ReplyKeyboardMarkup,
-    ReplyKeyboardRemove,
-    CallbackQuery,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton
+    CallbackQuery
 )
-
-TOKEN = getenv("BOT_TOKEN")
-
-form_router = Router()
-dp = Dispatcher()
-
-
-class BookingForm(StatesGroup):
-    preferred_currency = State()
-    departure_city = State()
-    arrival_city = State()
-    travel_dates = State()
-    number_of_people = State()
-    city_options = State()
-    flight_options = State()
-    booking_details = State()
-    payment = State()
-
-
-@form_router.message(CommandStart())
-async def start_booking(message: Message, state: FSMContext) -> None:
-    await state.set_state(BookingForm.preferred_currency.state)
-    currencies = CurrencyInfo.get_currencies()
-
-    buttons = [
-        [
-            InlineKeyboardButton(text=f"{flag} {symbol}", callback_data=currency_code)
-            for currency_code, (symbol, flag) in chunk
-        ]
-        for chunk in CurrencyInfo.chunks(list(currencies.items()), 8)
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-    await message.answer("Добро пожаловать! Пожалуйста, введите предпочитаемую валюту для бронирования.",
-                         reply_markup=keyboard)
+from aiogram3_calendar import simple_cal_callback, SimpleCalendar
+from .. import dp, form_router, BookingForm
 
 
 @dp.callback_query(simple_cal_callback.filter())
@@ -118,15 +70,3 @@ async def process_payment(message: Message, state: FSMContext) -> None:
     await state.update_data(payment=message.text)
     await state.clear()
     await message.answer("Ваше бронирование завершено! Спасибо, что выбрали нас для своих путешествий.")
-
-
-async def main():
-    bot = Bot(token=TOKEN, parse_mode=ParseMode.HTML)
-    dp.include_router(form_router)
-
-    await dp.start_polling(bot)
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
-    asyncio.run(main())
