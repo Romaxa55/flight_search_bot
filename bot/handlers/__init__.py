@@ -1,6 +1,7 @@
 import pkgutil
 import importlib
 from aiogram import Dispatcher
+from bot import logger
 
 
 def register_all_handlers(dp: Dispatcher):
@@ -9,4 +10,7 @@ def register_all_handlers(dp: Dispatcher):
         module = importlib.import_module(f"{__name__}.{module_name}")
         # Предполагаем, что каждый модуль имеет функцию register_handlers(dp)
         if hasattr(module, "register_handlers"):
+            logger.debug(f"Registering handlers from {module_name}")
             module.register_handlers(dp)
+        else:
+            logger.warning(f"No register_handlers function found in {module_name}")
