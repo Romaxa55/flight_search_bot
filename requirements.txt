@@ -3,3 +3,5 @@ requests==2.31.0
 aiohttp==3.8.6
 aiogram3-calendar==0.1.2b1
 forex_python==1.8
+sqlite-fsm-storage==3.0.0
+redis==5.0.1

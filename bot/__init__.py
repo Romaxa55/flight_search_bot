@@ -1,16 +1,13 @@
-from aiogram import Dispatcher, Router
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
 import logging
+
+from aiogram import Router
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
 form_router = Router()
-
-
-dp = Dispatcher(storage=MemoryStorage())
-dp.include_router(form_router)
 
 
 class BookingForm(StatesGroup):
@@ -23,5 +20,4 @@ class BookingForm(StatesGroup):
     flight_options = State()
     booking_details = State()
     payment = State()
-
 
