@@ -2,7 +2,6 @@ import logging
 
 from aiogram import Router
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)

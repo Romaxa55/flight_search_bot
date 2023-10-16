@@ -1,5 +1,3 @@
-from typing import Any
-
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
