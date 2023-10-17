@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram import F
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
@@ -7,12 +9,14 @@ from aiogram.types import (
 )
 
 from bot import form_router, BookingForm
+from bot.handlers.calendar import nav_cal_handler
 from bot.keybords import Keyboards
 from bot.utils import CurrencyInfo
 
 
 @form_router.message(CommandStart())
 async def start_booking(message: Message, state: FSMContext) -> None:
+    # Получаем данные пользователя из состояния
     user_data = await state.get_data()
     current_currency = user_data.get('currency')
     await state.set_state(BookingForm.preferred_currency)
@@ -32,6 +36,8 @@ async def handle_currency(callback_query: CallbackQuery, state: FSMContext):
     currency_code = callback_query.data.split('_')[1]
     await callback_query.message.edit_text(f"Выбрана валюта: {currency_code}")
     await state.update_data(currency=currency_code)
+    await asyncio.sleep(3)  # Пауза в 3 секунды
+    await nav_cal_handler(callback_query.message)
 
 
 @form_router.callback_query(lambda c: c.data == "confirm_change_currency")
@@ -40,12 +46,11 @@ async def confirm_change_currency(callback_query: CallbackQuery):
     await callback_query.message.edit_reply_markup(reply_markup=Keyboards.currency_selection_keyboard(
         CurrencyInfo.get_currencies()
     ))
-#
-#
-# @form_router.callback_query("cancel_change_currency")
-# async def cancel_change_currency(callback_query: CallbackQuery):
-#     await callback_query.message.edit_text("Выбор валюты отменен.")
-#     await callback_query.message.edit_reply_markup()  # Удалить клавиатуру
+
+
+@form_router.callback_query(lambda c: c.data == "cancel_change_currency")
+async def cancel_change_currency(callback_query: CallbackQuery):
+    await nav_cal_handler(callback_query.message)
 
 
 @form_router.message(Command("show_profile"))

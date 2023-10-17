@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 
 from bot.utils import CurrencyInfo
 
@@ -26,3 +26,15 @@ class Keyboards:
             for chunk in CurrencyInfo.chunks(list(currencies.items()), 3)
         ]
         return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+    @staticmethod
+    def calendar_keyboard():
+        start_kb = ReplyKeyboardMarkup(
+            resize_keyboard=True,
+            keyboard=[
+                [
+                    KeyboardButton(text='Navigation Calendar'),
+                    KeyboardButton(text='Dialog Calendar')
+                ]
+            ]
+        )
